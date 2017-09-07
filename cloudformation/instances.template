@@ -4,15 +4,10 @@ Description: sixodp application infrastructure
 Parameters:
   EnvironmentName:
     Type: String
-    Default: infratest
+    Default: oulu-qa
     AllowedValues:
-      - infratest
-      - generic-dev
-      - generic-qa
-      - generic-prod
-      - turku-qa
-      - tampere-qa
-      - tampere
+      - oulu-qa
+      - oulu
   InstanceType:
     Description: EC2 instance type for the application servers
     Type: String
@@ -34,11 +29,6 @@ Parameters:
     Description: Security group of the EFS filesystem
     Type: AWS::EC2::SecurityGroup::Id
     MinLength: 1
-  HostedZoneId:
-    Description: Zone ID for the DNS record
-    Type: AWS::Route53::HostedZone::Id
-    Default: Z3MUEH1DAIWOFS
-    MinLength: 1
   WhitelistedIpAddress:
     Type: String
     Default: 193.64.225.83/32
@@ -55,7 +45,7 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       ImageId: ami-c0cff0a6 # Ubuntu Server 16.04 LTS (HVM), SSD Volume Type
-      KeyName: sixodp-omni
+      KeyName: sixodp-oulu-omni
       IamInstanceProfile: !Ref InstanceProfile
       SecurityGroups:
         - !Ref InstanceSecurityGroup
@@ -91,20 +81,20 @@ Resources:
           install -d -o www-data -g www-data /mnt/wp-uploads
 
           cd /root
-          git clone https://github.com/6aika/sixodp-infra.git
-          git clone -b ${GitBranch} https://github.com/6aika/sixodp.git
+          git clone https://github.com/city-of-oulu/sixodp-infra-oulu.git
+          git clone -b ${GitBranch} https://github.com/city-of-oulu/sixodp-oulu.git
 
-          cd /root/sixodp-infra/bootstrap
+          cd /root/sixodp-infra-oulu/bootstrap
           ansible-playbook -i localhost, deploy.yml
 
-          cd /root/sixodp
+          cd /root/sixodp-oulu
           git submodule update --init --recursive
 
-          aws s3 cp s3://sixodp-secrets/${EnvironmentName}/secrets.yml /root/sixodp-secrets/${EnvironmentName}/secrets.yml
-          aws s3 cp s3://sixodp-secrets/${EnvironmentName}/google_analytics_credentials.json /root/sixodp-secrets/${EnvironmentName}/google_analytics_credentials.json
+          aws s3 cp s3://sixodp-oulu-secrets/${EnvironmentName}/secrets.yml /root/sixodp-secrets/${EnvironmentName}/secrets.yml
+          aws s3 cp s3://sixodp-oulu-secrets/${EnvironmentName}/google_analytics_credentials.json /root/sixodp-secrets/${EnvironmentName}/google_analytics_credentials.json
           chmod -R go-rwx /root/sixodp-secrets/*
 
-          cd /root/sixodp/ansible
+          cd /root/sixodp-oulu/ansible
           ansible-playbook -i inventories/${EnvironmentName} deploy-transitional.yml
 
           echo "Bootstrap done."
@@ -158,14 +148,10 @@ Resources:
       GroupId: !Ref EFSSecurityGroup
       SourceSecurityGroupName: !Ref InstanceSecurityGroup
 
-  DomainName:
-    Type: AWS::Route53::RecordSet
+  ElasticAddress:
+    Type: AWS::EC2::EIP
     Properties:
-      Name: !Sub ${EnvironmentName}.dataportaali.com.
-      Type: A
-      TTL: 300
-      HostedZoneId: !Ref HostedZoneId
-      ResourceRecords: [ { "Fn::GetAtt" : [ "EC2Instance", "PublicIp" ] } ]
+      InstanceId: !Ref EC2Instance
 
   InstanceRole:
     Type: AWS::IAM::Role
@@ -184,7 +170,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: s3:GetObject
-                Resource: !Sub "arn:aws:s3:::sixodp-secrets/${EnvironmentName}/*"
+                Resource: !Sub "arn:aws:s3:::sixodp-oulu-secrets/${EnvironmentName}/*"
               - Effect: Allow
                 Action: "*"
                 Resource:

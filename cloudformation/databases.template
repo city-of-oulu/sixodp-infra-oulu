@@ -4,15 +4,10 @@ Description: sixodp databases
 Parameters:
   EnvironmentName:
     Type: String
-    Default: infratest
+    Default: oulu-qa
     AllowedValues:
-      - infratest
-      - generic-dev
-      - generic-qa
-      - generic-prod
-      - turku-qa
-      - tampere-qa
-      - tampere
+      - oulu-qa
+      - oulu
   DatabaseSubnets:
     Description: Database and EFS mount target subnets
     Type: List<AWS::EC2::Subnet::Id>
