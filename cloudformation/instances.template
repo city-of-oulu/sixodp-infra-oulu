@@ -220,6 +220,8 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:s3:::sixodp-${EnvironmentName}-datasets"
                   - !Sub "arn:aws:s3:::sixodp-${EnvironmentName}-datasets/*"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
